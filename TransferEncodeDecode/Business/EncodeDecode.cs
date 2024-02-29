@@ -117,7 +117,7 @@ namespace TransferEncodeDecode.Business
             }
         }
 
-        static string ExtractFilename(string input)
+        private static string ExtractFilename(string input)
         {
             string pattern = "::\\^:(.*?):::";
 
@@ -128,7 +128,7 @@ namespace TransferEncodeDecode.Business
             return null;
         }
 
-        static string ExtractContent(string input)
+        private static string ExtractContent(string input)
         {
             string pattern = ":::(.*)";
 
