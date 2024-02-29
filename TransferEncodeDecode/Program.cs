@@ -26,17 +26,19 @@ namespace TransferEncodeDecode
                 bool reRunningAsAdministrator = args != null && args.Length > 0 && args[0].ToLower() == "-a";
                 bool uninstalling = args != null && args.Length > 0 && args[0].ToLower() == "-u";
 
-                if (createdNew || reRunningAsAdministrator)
+                if (createdNew || reRunningAsAdministrator || uninstalling)
                 {
                     try
                     {
                         if (args == null || args.Length == 0 || reRunningAsAdministrator)
                         {
+                            Arguments = "-a";
                             RegistryHelper.SetupRegistry(Assembly.GetExecutingAssembly().Location);
                             return;
                         }
                         else if (uninstalling)
                         {
+                            Arguments = "-u";
                             RegistryHelper.RemoveFromRegistry();
                             return;
                         }
@@ -74,7 +76,7 @@ namespace TransferEncodeDecode
             }
         }
 
-        internal static void RestartTheApplicationAsAdministrator(bool installing)
+        internal static void RestartTheApplicationAsAdministrator()
         {
             if (!ProcessHelper.IsRunningAsAdministrator())
             {
@@ -83,7 +85,7 @@ namespace TransferEncodeDecode
                 ProcessStartInfo startInfo = new ProcessStartInfo(exeName)
                 {
                     UseShellExecute = true,
-                    Arguments = installing ? "-a" : Arguments,
+                    Arguments = Arguments,
                     Verb = "runas" // Run as administrator
                 };
 

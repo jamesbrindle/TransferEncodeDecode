@@ -48,7 +48,7 @@ namespace TransferEncodeDecode.Helpers
             }
             catch
             {
-                Program.RestartTheApplicationAsAdministrator(true);
+                Program.RestartTheApplicationAsAdministrator();
             }
         }
 
@@ -76,7 +76,7 @@ namespace TransferEncodeDecode.Helpers
             }
             catch
             {
-                Program.RestartTheApplicationAsAdministrator(true);
+                Program.RestartTheApplicationAsAdministrator();
             }
         }
 

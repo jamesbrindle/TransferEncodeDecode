@@ -40,7 +40,7 @@ namespace TransferEncodeDecode.Business
             {
                 if (ex.Message.Contains("Access to the path") || ex.Message.Contains("denied"))
                 {
-                    Program.RestartTheApplicationAsAdministrator(false);
+                    Program.RestartTheApplicationAsAdministrator();
                     return;
                 }
 
@@ -101,7 +101,7 @@ namespace TransferEncodeDecode.Business
             {
                 if (ex.Message.Contains("Access to the path") || ex.Message.Contains("denied"))
                 {
-                    Program.RestartTheApplicationAsAdministrator(false);
+                    Program.RestartTheApplicationAsAdministrator();
                     return;
                 }
 
