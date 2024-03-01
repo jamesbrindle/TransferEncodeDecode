@@ -12,11 +12,12 @@ namespace TransferEncodeDecode.Helpers
                 string menuName = "TransferEncode";
                 string iconPath = exePath;
 
-                RegistryKey fileClick = Registry.ClassesRoot.CreateSubKey("*\\shell\\" + menuName);
+                RegistryKey fileClick = Registry.CurrentUser.CreateSubKey("Software\\Classes\\*\\shell\\" + menuName);
                 if (fileClick != null)
                 {
                     fileClick.SetValue("", "Transfer - Encode");
                     fileClick.SetValue("icon", exePath);
+                    fileClick.SetValue("MultiSelectMode", "Single");
 
                     RegistryKey subKey = fileClick.CreateSubKey("command");
                     if (subKey != null)
@@ -28,11 +29,12 @@ namespace TransferEncodeDecode.Helpers
                     fileClick.Close();
                 }
 
-                RegistryKey directoryClick = Registry.ClassesRoot.CreateSubKey("Directory\\Background\\shell\\" + menuName);
+                RegistryKey directoryClick = Registry.CurrentUser.CreateSubKey("Software\\Classes\\Directory\\Background\\shell\\" + menuName);
                 if (directoryClick != null)
                 {
                     directoryClick.SetValue("", "Transfer - Decode");
                     directoryClick.SetValue("icon", exePath);
+                    directoryClick.SetValue("MultiSelectMode", "Single");
 
                     RegistryKey subKey = directoryClick.CreateSubKey("command");
                     if (subKey != null)
@@ -58,18 +60,16 @@ namespace TransferEncodeDecode.Helpers
             {
                 string menuName = "TransferEncode";
 
-                // Remove registry key for file click
-                string fileClickKeyPath = "*\\shell\\" + menuName;
-                if (IsRegistryKeyExists(Registry.ClassesRoot, fileClickKeyPath))
+                string fileClickKeyPath = "Software\\Classes\\*\\shell\\" + menuName;
+                if (IsRegistryKeyExists(Registry.CurrentUser, fileClickKeyPath))
                 {
-                    Registry.ClassesRoot.DeleteSubKeyTree(fileClickKeyPath);
+                    Registry.CurrentUser.DeleteSubKeyTree(fileClickKeyPath);
                 }
 
-                // Remove registry key for directory click
-                string directoryClickKeyPath = "Directory\\Background\\shell\\" + menuName;
-                if (IsRegistryKeyExists(Registry.ClassesRoot, directoryClickKeyPath))
+                string directoryClickKeyPath = "Software\\Classes\\Directory\\Background\\shell\\" + menuName;
+                if (IsRegistryKeyExists(Registry.CurrentUser, directoryClickKeyPath))
                 {
-                    Registry.ClassesRoot.DeleteSubKeyTree(directoryClickKeyPath);
+                    Registry.CurrentUser.DeleteSubKeyTree(directoryClickKeyPath);
                 }
 
                 MessageBox.Show("Transfer Encoder - Decoder Uninstalled", "Uninstalled", MessageBoxButtons.OK, MessageBoxIcon.Information);
