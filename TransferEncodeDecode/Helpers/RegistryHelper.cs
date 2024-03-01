@@ -46,6 +46,8 @@ namespace TransferEncodeDecode.Helpers
                     directoryClick.Close();
                 }
 
+                AddAppCompatibilityFlag(exePath);
+
                 MessageBox.Show("Transfer Encoder - Decoder Installed", "Installed", MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
             catch
@@ -87,5 +89,22 @@ namespace TransferEncodeDecode.Helpers
                 return subKey != null;
             }
         }
+
+        private static void AddAppCompatibilityFlag(string exePath)
+        {
+            const string keyPath = @"SOFTWARE\Microsoft\Windows NT\CurrentVersion\AppCompatFlags\Layers";
+            string value = "~ PERPROCESSSYSTEMDPIFORCEON HIGHDPIAWARE";
+
+            using (RegistryKey baseKey = Registry.CurrentUser)
+            {
+                using (RegistryKey key = baseKey.CreateSubKey(keyPath))
+                {
+                    if (key != null)
+                    {
+                        key.SetValue(exePath, value, RegistryValueKind.String);
+                    }
+                }
+            }
+        }       
     }
 }

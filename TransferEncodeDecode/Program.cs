@@ -10,6 +10,9 @@ namespace TransferEncodeDecode
 {
     internal static class Program
     {
+        [System.Runtime.InteropServices.DllImport("user32.dll")]
+        private static extern bool SetProcessDPIAware();
+
         private static string Arguments = null;
 
         [STAThread]
@@ -20,6 +23,8 @@ namespace TransferEncodeDecode
             //            string message = string.Format("Please attach the debugger (elevated) to process [{0}].", processId);
             //            MessageBox.Show(message, "Debug");
             //#endif
+
+            SetProcessDPIAware();
 
             using (new Mutex(true, "TransferEncodeDecode", out bool createdNew))
             {
