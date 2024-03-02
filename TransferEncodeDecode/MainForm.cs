@@ -3,6 +3,7 @@ using System.IO;
 using System.Runtime.InteropServices;
 using System.Security.Permissions;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 using TransferEncodeDecode.Business;
 
@@ -63,28 +64,20 @@ namespace TransferEncodeDecode
             if (TransferType == TransferType.Encode)
             {
                 SetLabelText(Path.GetFileName(InputPath));
-
-                Thread thread = new Thread(() =>
+                Task.Factory.StartNew(() =>
                 {
                     EncodeDecode.Encode(InputPath);
-                });
-
-                thread.SetApartmentState(ApartmentState.STA);
-                thread.Start();
-                thread.Join();
+                }, CancellationToken.None, TaskCreationOptions.None, TaskScheduler.Default)
+               .ContinueWith(task => { }, TaskScheduler.FromCurrentSynchronizationContext());
             }
             else
-            {
-                SetLabelText($"Decoding...");
-
-                Thread thread = new Thread(() =>
+            {               
+                Task.Factory.StartNew(() =>
                 {
+                    Thread.Sleep(50);
                     EncodeDecode.Decode(InputPath);
-                });
-
-                thread.SetApartmentState(ApartmentState.STA);
-                thread.Start();
-                thread.Join();
+                }, CancellationToken.None, TaskCreationOptions.None, TaskScheduler.Default)
+               .ContinueWith(task => { }, TaskScheduler.FromCurrentSynchronizationContext());
             }
         }
 

@@ -99,10 +99,7 @@ namespace TransferEncodeDecode.Helpers
             {
                 using (RegistryKey key = baseKey.CreateSubKey(keyPath))
                 {
-                    if (key != null)
-                    {
-                        key.SetValue(exePath, value, RegistryValueKind.String);
-                    }
+                    key?.SetValue(exePath, value, RegistryValueKind.String);
                 }
             }
         }       

@@ -23,18 +23,41 @@ namespace TransferEncodeDecode.Business
                 if (!File.Exists(filePath))
                     throw new ApplicationException("Path does not exist");
 
-                // Reading all bytes from the file without locking it
-                using (FileStream fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
-                {
-                    byte[] fileBytes = new byte[fileStream.Length];
-                    fileStream.Read(fileBytes, 0, fileBytes.Length);
-                    byte[] compressedBytes = ByteCompressDecompress.Compress(fileBytes);
-                    Clipboard.SetText($"::^:{Path.GetFileName(filePath)}:::{Convert.ToBase64String(compressedBytes)}");
+                const int bufferSize = 8192;
+                var buffer = new byte[bufferSize];
 
-                    Thread.Sleep(1000);
+                string ascii85Contents = null;
+                using (FileStream fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                using (MemoryStream memoryStream = new MemoryStream())
+                {
+                    int bytesRead;
+                    while ((bytesRead = fileStream.Read(buffer, 0, buffer.Length)) > 0)
+                        memoryStream.Write(buffer, 0, bytesRead);
+
+                    memoryStream.Position = 0;
+                    ascii85Contents = Ascii85Encoder.Encode(Compression.Compress(memoryStream));
                 }
 
+                MainForm.Invoke(new Action(() =>
+                {
+                    Clipboard.SetText(
+                        $"::^:{Path.GetFileName(filePath)}:::" +
+                        $"{ascii85Contents}");
+                }));
+
+
                 Application.Exit();
+            }
+            catch (OutOfMemoryException)
+            {
+                ThreadPool.QueueUserWorkItem(delegate
+                {
+                    MainForm.SetLabelText("File too big");
+                    Thread.Sleep(1500);
+
+                    Application.Exit();
+                });
+
             }
             catch (Exception ex)
             {
@@ -62,40 +85,48 @@ namespace TransferEncodeDecode.Business
                 if (!Directory.Exists(directoryPath))
                     throw new ApplicationException("Directory does not exist");
 
-                string raw = Clipboard.GetText();
+                string ascii85Contents = null;
+                MainForm.Invoke(new Action(() =>
+                {
+                    ascii85Contents = Clipboard.GetText();
+                }));
 
-                if (raw != null && raw.Length == 0)
+
+                if (string.IsNullOrEmpty(ascii85Contents))
                     throw new ApplicationException("No text in clipboard");
 
-                if (!raw.StartsWith("::^:"))
+                if (!ascii85Contents.StartsWith("::^:"))
                     throw new ApplicationException("Invalid clipboard data");
 
-                string filename = ExtractFilename(raw);
-                string base64Contents = ExtractContent(raw);
+                string filename = ExtractFilename(ascii85Contents);
+                ascii85Contents = ExtractContent(filename, ascii85Contents);
 
                 string outputPath = Path.Combine(directoryPath, filename);
 
-                if (File.Exists(outputPath))
+                if (File.Exists(outputPath) && !ConfirmOverwrite())
+                    Application.Exit();
+
+                using (var inputMemoryStream = Ascii85Encoder.DecodeToStream(ascii85Contents))
+                using (var decompressedStream = Compression.Decompress(inputMemoryStream))
+                using (var fileStream = new FileStream(outputPath, FileMode.Create, FileAccess.Write))
                 {
-                    if (
-                        MessageBox.Show(
-                            "File already exists. Overwrite?",
-                            "Overwrite?",
-                            MessageBoxButtons.YesNo,
-                            MessageBoxIcon.Exclamation) == DialogResult.Yes)
-                    {
-                        File.Delete(outputPath);
-                        Thread.Sleep(500);
-                        File.WriteAllBytes(Path.Combine(directoryPath, filename), ByteCompressDecompress.Decompress(Convert.FromBase64String(base64Contents)));
-                    }
-                }
-                else
-                {
-                    File.WriteAllBytes(Path.Combine(directoryPath, filename), ByteCompressDecompress.Decompress(Convert.FromBase64String(base64Contents)));
+                    decompressedStream.CopyTo(fileStream);
                 }
 
                 Thread.Sleep(1000);
+
                 Application.Exit();
+            }
+            catch (OutOfMemoryException)
+            {
+                ThreadPool.QueueUserWorkItem(delegate
+                {
+                    MainForm.SetLabelText("File too big");
+                    Thread.Sleep(1500);
+
+                    Application.Exit();
+                });
+
             }
             catch (Exception ex)
             {
@@ -117,6 +148,15 @@ namespace TransferEncodeDecode.Business
             }
         }
 
+        private bool ConfirmOverwrite()
+        {
+            return MessageBox.Show(
+                "File already exists. Overwrite?",
+                "Overwrite?",
+                MessageBoxButtons.YesNo,
+                MessageBoxIcon.Exclamation) == DialogResult.Yes;
+        }
+
         private static string ExtractFilename(string input)
         {
             string pattern = "::\\^:(.*?):::";
@@ -128,15 +168,9 @@ namespace TransferEncodeDecode.Business
             return null;
         }
 
-        private static string ExtractContent(string input)
+        private static string ExtractContent(string filename, string input)
         {
-            string pattern = ":::(.*)";
-
-            Match match = Regex.Match(input, pattern);
-            if (match.Success)
-                return match.Groups[1].Value;
-
-            return null;
+            return input.Substring(filename.Length + 7);
         }
     }
 }

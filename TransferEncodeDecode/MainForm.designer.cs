@@ -50,13 +50,12 @@
             this.lblLabel.AutoEllipsis = true;
             this.lblLabel.Font = new System.Drawing.Font("Segoe UI", 6.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.lblLabel.ForeColor = System.Drawing.SystemColors.ControlDarkDark;
-            this.lblLabel.Location = new System.Drawing.Point(3, 186);
+            this.lblLabel.Location = new System.Drawing.Point(3, 181);
             this.lblLabel.Name = "lblLabel";
             this.lblLabel.Size = new System.Drawing.Size(205, 16);
             this.lblLabel.TabIndex = 4;
-            this.lblLabel.Text = "Label";
+            this.lblLabel.Text = "Decoding...";
             this.lblLabel.TextAlign = System.Drawing.ContentAlignment.TopCenter;
-            this.lblLabel.Visible = false;
             // 
             // MainForm
             // 
