@@ -1,6 +1,5 @@
 ﻿using System;
 using System.IO;
-using System.Text.RegularExpressions;
 using System.Threading;
 using System.Windows.Forms;
 using TransferEncodeDecode.Helpers;
@@ -10,24 +9,27 @@ namespace TransferEncodeDecode.Business
     internal class EncodeDecode
     {
         private readonly MainForm MainForm;
+        private string tempDirectoryPath = string.Empty;
+        private string tempArchivePath = string.Empty;
 
         public EncodeDecode(MainForm mainForm)
         {
             MainForm = mainForm;
         }
 
-        internal void Encode(string filePath)
+        internal void Encode()
         {
             try
             {
-                if (!File.Exists(filePath))
-                    throw new ApplicationException("Path does not exist");
+                tempArchivePath = Path.Combine(Program.TempPath, $"{Guid.NewGuid()}.7z");
+
+                Compression.CompressFilesAndFoldersWith7Zip(Program.InputFiles, tempArchivePath);
 
                 const int bufferSize = 8192;
                 var buffer = new byte[bufferSize];
 
                 string ascii85Contents = null;
-                using (FileStream fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                using (FileStream fileStream = new FileStream(tempArchivePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
                 using (MemoryStream memoryStream = new MemoryStream())
                 {
                     int bytesRead;
@@ -35,17 +37,17 @@ namespace TransferEncodeDecode.Business
                         memoryStream.Write(buffer, 0, bytesRead);
 
                     memoryStream.Position = 0;
-                    ascii85Contents = Ascii85Encoder.Encode(Compression.Compress(memoryStream));
+                    ascii85Contents = "::::" + Ascii85Encoder.Encode(memoryStream);
                 }
 
                 MainForm.Invoke(new Action(() =>
                 {
-                    Clipboard.SetText(
-                        $"::^:{Path.GetFileName(filePath)}:::" +
-                        $"{ascii85Contents}");
+                    Clipboard.SetText(ascii85Contents);
                 }));
 
+                PathHelper.DeleteArchiveTempPaths(tempArchivePath);
 
+                Thread.Sleep(1000);
                 Application.Exit();
             }
             catch (OutOfMemoryException)
@@ -53,8 +55,9 @@ namespace TransferEncodeDecode.Business
                 ThreadPool.QueueUserWorkItem(delegate
                 {
                     MainForm.SetLabelText("File too big");
-                    Thread.Sleep(1500);
+                    PathHelper.DeleteArchiveTempPaths(tempArchivePath);
 
+                    Thread.Sleep(1500);
                     Application.Exit();
                 });
 
@@ -71,8 +74,9 @@ namespace TransferEncodeDecode.Business
                 ThreadPool.QueueUserWorkItem(delegate
                 {
                     MainForm.SetLabelText(ex.Message);
-                    Thread.Sleep(1500);
+                    PathHelper.DeleteArchiveTempPaths(tempArchivePath);
 
+                    Thread.Sleep(1500);
                     Application.Exit();
                 });
             }
@@ -91,30 +95,48 @@ namespace TransferEncodeDecode.Business
                     ascii85Contents = Clipboard.GetText();
                 }));
 
-
                 if (string.IsNullOrEmpty(ascii85Contents))
                     throw new ApplicationException("No text in clipboard");
 
-                if (!ascii85Contents.StartsWith("::^:"))
+                if (!ascii85Contents.StartsWith("::::"))
                     throw new ApplicationException("Invalid clipboard data");
 
-                string filename = ExtractFilename(ascii85Contents);
-                ascii85Contents = ExtractContent(filename, ascii85Contents);
+                tempArchivePath = Path.Combine(Program.TempPath, Extensions.GenerateShortGuid(8), $"{Extensions.GenerateShortGuid(8)}.7z");
+                tempDirectoryPath = Path.GetDirectoryName(tempArchivePath);
 
-                string outputPath = Path.Combine(directoryPath, filename);
+                if (!Directory.Exists(tempDirectoryPath))
+                    Directory.CreateDirectory(tempDirectoryPath);
 
-                if (File.Exists(outputPath) && !ConfirmOverwrite())
-                    Application.Exit();
-
-                using (var inputMemoryStream = Ascii85Encoder.DecodeToStream(ascii85Contents))
-                using (var decompressedStream = Compression.Decompress(inputMemoryStream))
-                using (var fileStream = new FileStream(outputPath, FileMode.Create, FileAccess.Write))
+                using (var inputMemoryStream = Ascii85Encoder.DecodeToStream(ascii85Contents.Substring(4)))
+                using (var fileStream = new FileStream(tempArchivePath, FileMode.Create, FileAccess.Write))
                 {
-                    decompressedStream.CopyTo(fileStream);
+                    inputMemoryStream.CopyTo(fileStream);
                 }
 
-                Thread.Sleep(1000);
+                Compression.ExtractToDirectoryWith7Zip(tempArchivePath, tempDirectoryPath);
 
+                string childPath = Directory.GetDirectories(tempDirectoryPath)[0];
+                if (PathHelper.FilesExistAtDestination(childPath, directoryPath))
+                {
+                    if (!ConfirmOverwrite())
+                    {
+                        try
+                        {
+                            PathHelper.DeleteArchiveTempPaths(tempArchivePath, tempDirectoryPath);
+                            Application.Exit();
+                        }
+                        catch { }
+                    }
+                    else
+                    {
+                        PathHelper.DeleteFilesAtDistination(childPath, directoryPath);
+                    }
+                }
+
+                PathHelper.MoveContents(childPath, directoryPath);
+                PathHelper.DeleteArchiveTempPaths(tempArchivePath, tempDirectoryPath);
+
+                Thread.Sleep(1000);
                 Application.Exit();
             }
             catch (OutOfMemoryException)
@@ -122,8 +144,9 @@ namespace TransferEncodeDecode.Business
                 ThreadPool.QueueUserWorkItem(delegate
                 {
                     MainForm.SetLabelText("File too big");
-                    Thread.Sleep(1500);
+                    PathHelper.DeleteArchiveTempPaths(tempArchivePath, tempDirectoryPath);
 
+                    Thread.Sleep(1500);
                     Application.Exit();
                 });
 
@@ -136,13 +159,12 @@ namespace TransferEncodeDecode.Business
                     return;
                 }
 
-                Console.WriteLine("Error reading clipboard: " + ex.Message);
-
                 ThreadPool.QueueUserWorkItem(delegate
                 {
                     MainForm.SetLabelText(ex.Message);
-                    Thread.Sleep(1500);
+                    PathHelper.DeleteArchiveTempPaths(tempArchivePath, tempDirectoryPath);
 
+                    Thread.Sleep(1500);
                     Application.Exit();
                 });
             }
@@ -155,22 +177,6 @@ namespace TransferEncodeDecode.Business
                 "Overwrite?",
                 MessageBoxButtons.YesNo,
                 MessageBoxIcon.Exclamation) == DialogResult.Yes;
-        }
-
-        private static string ExtractFilename(string input)
-        {
-            string pattern = "::\\^:(.*?):::";
-
-            Match match = Regex.Match(input, pattern);
-            if (match.Success)
-                return match.Groups[1].Value;
-
-            return null;
-        }
-
-        private static string ExtractContent(string filename, string input)
-        {
-            return input.Substring(filename.Length + 7);
         }
     }
 }

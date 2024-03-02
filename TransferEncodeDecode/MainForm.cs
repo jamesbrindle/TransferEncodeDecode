@@ -9,24 +9,67 @@ using TransferEncodeDecode.Business;
 
 namespace TransferEncodeDecode
 {
-    public partial class MainForm : BaseForm
+    public partial class MainForm : Form
     {
-        #region Messages
+        #region Presentation
 
         private const int WM_NCLBUTTONDOWN = 0xA1;
         private const int HTCAPTION = 2;
+        private const int WM_NCHITTEST = 0x0084;
+        private const int HTCLIENT = 1;
 
         [DllImportAttribute("user32.dll")]
         public static extern int SendMessage(IntPtr hWnd, int Msg, int wParam, int lParam);
         [DllImportAttribute("user32.dll")]
         public static extern bool ReleaseCapture();
 
-        #endregion
+        public enum DWMWINDOWATTRIBUTE
+        {
+            DWMWA_WINDOW_CORNER_PREFERENCE = 33
+        }
 
-        private readonly EncodeDecode EncodeDecode;
+        public enum DWM_WINDOW_CORNER_PREFERENCE
+        {
+            DWMWCP_DEFAULT = 0,
+            DWMWCP_DONOTROUND = 1,
+            DWMWCP_ROUND = 2,
+            DWMWCP_ROUNDSMALL = 3
+        }
 
-        private readonly TransferType TransferType;
-        private readonly string InputPath;
+        [DllImport("dwmapi.dll", CharSet = CharSet.Unicode, PreserveSig = false)]
+        internal static extern void DwmSetWindowAttribute(
+            IntPtr hwnd,
+            DWMWINDOWATTRIBUTE attribute,
+            ref DWM_WINDOW_CORNER_PREFERENCE pvAttribute,
+            uint cbAttribute);
+
+        protected override void WndProc(ref Message m)
+        {
+            base.WndProc(ref m);
+            switch (m.Msg)
+            {
+                case WM_NCHITTEST:
+                    if (m.Result == (IntPtr)HTCLIENT)
+                    {
+                        m.Result = (IntPtr)HTCAPTION;
+                    }
+                    break;
+            }
+        }
+
+        [DllImport("User32.dll")]
+        public static extern Int32 SetForegroundWindow(int hWnd);
+
+        public void SetFormRoundCorners()
+        {
+            try
+            {
+                var attribute = DWMWINDOWATTRIBUTE.DWMWA_WINDOW_CORNER_PREFERENCE;
+                var preference = DWM_WINDOW_CORNER_PREFERENCE.DWMWCP_ROUND;
+                DwmSetWindowAttribute(this.Handle, attribute, ref preference, sizeof(uint));
+            }
+            catch { }
+        }
 
         protected override CreateParams CreateParams
         {
@@ -39,12 +82,16 @@ namespace TransferEncodeDecode
             }
         }
 
-        public MainForm(TransferType transferType, string inputPath)
+        #endregion
+
+        private readonly EncodeDecode EncodeDecode;
+        private readonly TransferType TransferType;
+
+        public MainForm(TransferType transferType)
         {
             EncodeDecode = new EncodeDecode(this);
 
             TransferType = transferType;
-            InputPath = inputPath;
 
             InitializeComponent();
             SetFormRoundCorners();
@@ -57,25 +104,32 @@ namespace TransferEncodeDecode
             this.Activate();
             this.Focus();
             SetForegroundWindow(this.Handle.ToInt32());
+
+            new Thread((ThreadStart)delegate
+            {
+                while (!Program.StartProcess)
+                    Thread.Sleep(50);
+
+            }).Start();
         }
 
         private void MainForm_Shown(object sender, EventArgs e)
         {
             if (TransferType == TransferType.Encode)
             {
-                SetLabelText(Path.GetFileName(InputPath));
+                SetLabelText(Program.InputFiles.Count > 1 ? "Encoding" : Path.GetFileName(Program.InputFiles[0]));
                 Task.Factory.StartNew(() =>
                 {
-                    EncodeDecode.Encode(InputPath);
+                    EncodeDecode.Encode();
                 }, CancellationToken.None, TaskCreationOptions.None, TaskScheduler.Default)
                .ContinueWith(task => { }, TaskScheduler.FromCurrentSynchronizationContext());
             }
             else
-            {               
+            {
                 Task.Factory.StartNew(() =>
                 {
                     Thread.Sleep(50);
-                    EncodeDecode.Decode(InputPath);
+                    EncodeDecode.Decode(Program.InputFiles[0]);
                 }, CancellationToken.None, TaskCreationOptions.None, TaskScheduler.Default)
                .ContinueWith(task => { }, TaskScheduler.FromCurrentSynchronizationContext());
             }
@@ -103,6 +157,11 @@ namespace TransferEncodeDecode
                 ReleaseCapture();
                 SendMessage(Handle, WM_NCLBUTTONDOWN, HTCAPTION, 0);
             }
+        }
+
+        private void MainForm_FormClosed(object sender, FormClosedEventArgs e)
+        {
+            Application.Exit();
         }
     }
 }

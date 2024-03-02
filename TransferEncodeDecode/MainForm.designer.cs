@@ -54,7 +54,7 @@
             this.lblLabel.Name = "lblLabel";
             this.lblLabel.Size = new System.Drawing.Size(205, 16);
             this.lblLabel.TabIndex = 4;
-            this.lblLabel.Text = "Decoding...";
+            this.lblLabel.Text = "Decoding";
             this.lblLabel.TextAlign = System.Drawing.ContentAlignment.TopCenter;
             // 
             // MainForm
@@ -75,6 +75,7 @@
             this.Name = "MainForm";
             this.SizeGripStyle = System.Windows.Forms.SizeGripStyle.Hide;
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
+            this.FormClosed += new System.Windows.Forms.FormClosedEventHandler(this.MainForm_FormClosed);
             this.Shown += new System.EventHandler(this.MainForm_Shown);
             ((System.ComponentModel.ISupportInitialize)(this.pbPreloader)).EndInit();
             this.ResumeLayout(false);

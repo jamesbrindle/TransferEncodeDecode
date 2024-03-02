@@ -7,40 +7,40 @@ namespace TransferEncodeDecode.Helpers
     /// <summary>
     /// As in the actual program Window rather then the 'Windows' operating system... Used to focus windows (bring to front etc)
     /// </summary>
-    public class WindowHelper
+    internal class WindowHelper
     {
         [DllImport("user32.dll")]
-        public static extern int SetForegroundWindow(int hwnd);
+        internal static extern int SetForegroundWindow(int hwnd);
 
         [DllImport("user32.dll", SetLastError = true)]
         private static extern bool BringWindowToTop(HandleRef hWnd);
 
         [DllImport("user32.dll", SetLastError = true)]
-        public static extern bool BringWindowToTop(IntPtr hWnd);
+        internal static extern bool BringWindowToTop(IntPtr hWnd);
 
         [DllImport("user32.dll")]
         [return: MarshalAs(UnmanagedType.Bool)]
         private static extern bool ShowWindow(IntPtr hWnd, ShowWindowEnum flags);
 
         [DllImport("user32.dll")]
-        public static extern int ShowWindow(IntPtr hWnd, uint Msg);
+        internal static extern int ShowWindow(IntPtr hWnd, uint Msg);
 
         [DllImport("user32.dll")]
-        public static extern bool ShowWindowAsync(IntPtr hWnd, int nCmdShow);
+        internal static extern bool ShowWindowAsync(IntPtr hWnd, int nCmdShow);
 
         [DllImport("user32.dll")]
-        public static extern int SetForegroundWindow(IntPtr hwnd);
+        internal static extern int SetForegroundWindow(IntPtr hwnd);
 
         [DllImport("user32.dll")]
         [return: MarshalAs(UnmanagedType.Bool)]
-        public static extern bool IsWindowVisible(IntPtr hWnd);
+        internal static extern bool IsWindowVisible(IntPtr hWnd);
 
         [DllImport("user32.dll")]
         [return: MarshalAs(UnmanagedType.Bool)]
         private static extern bool GetWindowPlacement(IntPtr hWnd, ref WINDOWPLACEMENT lpwndpl);
 
         [DllImport("user32.dll", SetLastError = true)]
-        public static extern bool GetWindowRect(IntPtr hWnd, ref RECT Rect);
+        internal static extern bool GetWindowRect(IntPtr hWnd, ref RECT Rect);
 
         [DllImport("user32.dll", EntryPoint = "FindWindow")]
         private extern static IntPtr FindWindow(string lpClassName, string lpWindowName);
@@ -55,16 +55,16 @@ namespace TransferEncodeDecode.Helpers
         private delegate bool EnumDelegate(IntPtr hWnd, int lParam);
 
         [DllImport("user32.dll")]
-        public static extern uint GetWindowThreadProcessId(IntPtr hWnd, IntPtr ProcessId);
+        internal static extern uint GetWindowThreadProcessId(IntPtr hWnd, IntPtr ProcessId);
 
         [DllImport("user32.dll", SetLastError = true)]
         private static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint processId);
 
         [DllImport("kernel32.dll")]
-        public static extern uint GetCurrentThreadId();
+        internal static extern uint GetCurrentThreadId();
 
         [DllImport("user32.dll")]
-        public static extern IntPtr GetForegroundWindow();
+        internal static extern IntPtr GetForegroundWindow();
 
         [DllImport("user32.dll", SetLastError = true)]
         private static extern bool MoveWindow(IntPtr hWnd, int X, int Y, int Width, int Height, bool Repaint);
@@ -82,21 +82,21 @@ namespace TransferEncodeDecode.Helpers
 
         private struct WINDOWPLACEMENT
         {
-            public int length;
-            public int flags;
-            public int showCmd;
-            public System.Drawing.Point ptMinPosition;
-            public System.Drawing.Point ptMaxPosition;
-            public System.Drawing.Rectangle rcNormalPosition;
+            internal int length;
+            internal int flags;
+            internal int showCmd;
+            internal System.Drawing.Point ptMinPosition;
+            internal System.Drawing.Point ptMaxPosition;
+            internal System.Drawing.Rectangle rcNormalPosition;
         }
 
         [StructLayout(LayoutKind.Sequential)]
-        public struct RECT
+        internal struct RECT
         {
-            public int Left;
-            public int Top;
-            public int Right;
-            public int Bottom;
+            internal int Left;
+            internal int Top;
+            internal int Right;
+            internal int Bottom;
         }
 
         private enum ShowWindowEnum
@@ -112,7 +112,7 @@ namespace TransferEncodeDecode.Helpers
         /// <summary>
         /// Makes sure to show the window. If it's minimised - Restore it. If it's behind then Active it. If it's of a protected process, attach to this process to active it...
         /// </summary>
-        public static void ShowRestoreAndFocusWindow(IntPtr handle)
+        internal static void ShowRestoreAndFocusWindow(IntPtr handle)
         {
             bool complete = false;
 
@@ -234,7 +234,7 @@ namespace TransferEncodeDecode.Helpers
         /// <summary>
         /// Based on window handle - is the window minimised or not?
         /// </summary>
-        public static bool IsWindowMinimised(IntPtr handle)
+        internal static bool IsWindowMinimised(IntPtr handle)
         {
             if (handle != IntPtr.Zero)
             {
@@ -253,7 +253,7 @@ namespace TransferEncodeDecode.Helpers
         /// <summary>
         /// Based on window handle - is the window maximised or not?
         /// </summary>
-        public static bool IsWindowMaximised(IntPtr handle)
+        internal static bool IsWindowMaximised(IntPtr handle)
         {
             if (handle != IntPtr.Zero)
             {
@@ -272,7 +272,7 @@ namespace TransferEncodeDecode.Helpers
         /// <summary>
         /// Based on window handle - Set the windows to maxomised
         /// </summary>
-        public static void MaximiseWindow(IntPtr handle)
+        internal static void MaximiseWindow(IntPtr handle)
         {
             ShowWindow(handle, (uint)SW_MAXIMIZE);
             ShowWindowAsync(handle, SW_MAXIMIZE);
@@ -281,7 +281,7 @@ namespace TransferEncodeDecode.Helpers
         /// <summary>
         /// Based on window handle - Set the windows to restored
         /// </summary>
-        public static void RestoreWindow(IntPtr handle)
+        internal static void RestoreWindow(IntPtr handle)
         {
             ShowWindow(handle, (uint)SW_RESTORE);
             ShowWindowAsync(handle, SW_RESTORE);

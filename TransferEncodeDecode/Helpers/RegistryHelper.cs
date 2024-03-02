@@ -1,4 +1,5 @@
 ﻿using Microsoft.Win32;
+using System.Collections.Generic;
 using System.Windows.Forms;
 
 namespace TransferEncodeDecode.Helpers
@@ -17,7 +18,7 @@ namespace TransferEncodeDecode.Helpers
                 {
                     fileClick.SetValue("", "Transfer - Encode");
                     fileClick.SetValue("icon", exePath);
-                    fileClick.SetValue("MultiSelectMode", "Single");
+                    fileClick.SetValue("MultiSelectMode", "Player");
 
                     RegistryKey subKey = fileClick.CreateSubKey("command");
                     if (subKey != null)
@@ -29,21 +30,38 @@ namespace TransferEncodeDecode.Helpers
                     fileClick.Close();
                 }
 
-                RegistryKey directoryClick = Registry.CurrentUser.CreateSubKey("Software\\Classes\\Directory\\Background\\shell\\" + menuName);
+                RegistryKey directoryClick = Registry.CurrentUser.CreateSubKey("Software\\Classes\\Directory\\shell\\" + menuName);
                 if (directoryClick != null)
                 {
-                    directoryClick.SetValue("", "Transfer - Decode");
+                    directoryClick.SetValue("", "Transfer - Encode");
                     directoryClick.SetValue("icon", exePath);
-                    directoryClick.SetValue("MultiSelectMode", "Single");
+                    directoryClick.SetValue("MultiSelectMode", "Player");
 
                     RegistryKey subKey = directoryClick.CreateSubKey("command");
+                    if (subKey != null)
+                    {
+                        subKey.SetValue("", $"\"{exePath}\" -e \"%1\"");
+                        subKey.Close();
+                    }
+
+                    directoryClick.Close();
+                }
+
+                RegistryKey directoryBackgroundClick = Registry.CurrentUser.CreateSubKey("Software\\Classes\\Directory\\Background\\shell\\" + menuName);
+                if (directoryBackgroundClick != null)
+                {
+                    directoryBackgroundClick.SetValue("", "Transfer - Decode");
+                    directoryBackgroundClick.SetValue("icon", exePath);
+                    directoryBackgroundClick.SetValue("MultiSelectMode", "Single");
+
+                    RegistryKey subKey = directoryBackgroundClick.CreateSubKey("command");
                     if (subKey != null)
                     {
                         subKey.SetValue("", $"\"{exePath}\" -d \"%V\"");
                         subKey.Close();
                     }
 
-                    directoryClick.Close();
+                    directoryBackgroundClick.Close();
                 }
 
                 AddAppCompatibilityFlag(exePath);
@@ -81,6 +99,55 @@ namespace TransferEncodeDecode.Helpers
                 Program.RestartTheApplicationAsAdministrator();
             }
         }
+        internal static List<InstalledProgram> GetInstalledPrograms()
+        {
+            var installedPrograms = new List<InstalledProgram>();
+            installedPrograms.AddRange(ReadRegistryUninstall(RegistryView.Registry32));
+            installedPrograms.AddRange(ReadRegistryUninstall(RegistryView.Registry64));
+
+            return installedPrograms;
+        }
+
+        private static List<InstalledProgram> ReadRegistryUninstall(RegistryView view)
+        {
+            var installedPrograms = new List<InstalledProgram>();
+            const string REGISTRY_KEY = @"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall";
+            using (var baseKey = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, view))
+            {
+                using (var subKey = baseKey.OpenSubKey(REGISTRY_KEY))
+                {
+                    foreach (string subkey_name in subKey.GetSubKeyNames())
+                    {
+                        using (var key = subKey.OpenSubKey(subkey_name))
+                        {
+                            if (!string.IsNullOrEmpty(key.GetValue("DisplayName") as string))
+                            {
+                                installedPrograms.Add(new InstalledProgram
+                                {
+                                    Platform = view == RegistryView.Registry32
+                                                            ? InstalledProgram.PlatFormType.X86
+                                                            : InstalledProgram.PlatFormType.X64,
+
+                                    DisplayName = (string)key.GetValue("DisplayName"),
+                                    Version = (string)key.GetValue("DisplayVersion"),
+                                    InstalledDate = (string)key.GetValue("InstallDate"),
+                                    Publisher = (string)key.GetValue("Publisher"),
+                                    InstallLocation = (string)key.GetValue("InstallLocation"),
+                                    UninstallCommand = (string)key.GetValue("UninstallString"),
+                                    UninstallSubkeyName = subkey_name
+                                });
+                            }
+                            key.Close();
+                        }
+                    }
+                    subKey.Close();
+                }
+
+                baseKey.Close();
+            }
+
+            return installedPrograms;
+        }
 
         private static bool IsRegistryKeyExists(RegistryKey root, string subKeyPath)
         {
@@ -102,6 +169,24 @@ namespace TransferEncodeDecode.Helpers
                     key?.SetValue(exePath, value, RegistryValueKind.String);
                 }
             }
-        }       
+        }
+        public class InstalledProgram
+        {
+            public enum PlatFormType
+            {
+                X86,
+                X64
+            }
+
+            public PlatFormType Platform { get; set; }
+            public string DisplayName { get; set; }
+            public string Version { get; set; }
+            public string InstalledDate { get; set; }
+            public string Publisher { get; set; }
+            public string InstallLocation { get; set; }
+            public string UninstallCommand { get; set; }
+            public string ModifyPath { get; set; }
+            public string UninstallSubkeyName { get; set; }
+        }
     }
 }
