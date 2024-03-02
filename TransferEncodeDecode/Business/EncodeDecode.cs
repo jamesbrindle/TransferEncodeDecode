@@ -1,6 +1,5 @@
 ﻿using System;
 using System.IO;
-using System.Linq;
 using System.Threading;
 using System.Windows.Forms;
 using TransferEncodeDecode.Helpers;
@@ -116,7 +115,7 @@ namespace TransferEncodeDecode.Business
 
                 Compression.ExtractToDirectoryWith7Zip(tempArchivePath, tempDirectoryPath);
 
-                string childPath = Path.Combine(tempDirectoryPath, PathHelper.RemoveDriveLetter(GetChildDirectory(tempDirectoryPath)));
+                string childPath = Path.Combine(tempDirectoryPath, PathHelper.RemoveHostOrDriveLetter(PathHelper.GetChildDirectory(tempDirectoryPath)));
 
                 if (PathHelper.FilesExistAtDestination(childPath, directoryPath))
                 {
@@ -170,24 +169,6 @@ namespace TransferEncodeDecode.Business
                     Application.Exit();
                 });
             }
-        }
-
-        private string GetChildDirectory(string extractedPath)
-        {
-            string tempCommonRootFile = Directory.GetFiles(extractedPath, "*.*", SearchOption.AllDirectories)
-                                                 .Where(m => Path.GetFileName(m)
-                                                 .StartsWith("-temp-common-root"))
-                                                 .FirstOrDefault();
-
-            string childDiretory = File.ReadAllText(tempCommonRootFile);
-
-            try
-            {
-                File.Delete(tempCommonRootFile);
-            }
-            catch { }
-
-            return childDiretory;
         }
 
         private bool ConfirmOverwrite()

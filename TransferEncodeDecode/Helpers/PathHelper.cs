@@ -36,13 +36,39 @@ namespace TransferEncodeDecode.Helpers
             return paths;
         }
 
-        internal static string RemoveDriveLetter(string path)
+        internal static string RemoveHostOrDriveLetter(string path)
         {
             string root = Path.GetPathRoot(path);
             if (!string.IsNullOrEmpty(root) && path.StartsWith(root))
-                return path.Substring(root.Length);
+            {
+                if (path.StartsWith("\\"))
+                {
+                    path = path.Substring(2);
+                    return path.Substring(path.IndexOf('\\') + 1);
+                }
+                else
+                    return path.Substring(root.Length);
+            }
 
             return path;
+        }
+
+        internal static string GetChildDirectory(string extractedPath)
+        {
+            string tempCommonRootFile = Directory.GetFiles(extractedPath, "*.*", SearchOption.AllDirectories)
+                                                 .Where(m => Path.GetFileName(m)
+                                                 .StartsWith("-temp-common-root"))
+                                                 .FirstOrDefault();
+
+            string childDiretory = File.ReadAllText(tempCommonRootFile);
+
+            try
+            {
+                File.Delete(tempCommonRootFile);
+            }
+            catch { }
+
+            return childDiretory;
         }
 
         internal static string FindCommonRootDirectory(string[] paths)
@@ -50,37 +76,28 @@ namespace TransferEncodeDecode.Helpers
             if (paths == null || paths.Length == 0)
                 return string.Empty;
 
-            string[][] splitPaths = paths.Select(path => path.Split(Path.DirectorySeparatorChar)).ToArray();
+            // Check for UNC path
+            bool isUNCPath = paths.All(path => path.StartsWith(@"\\"));
+
+            string[][] splitPaths = paths.Select(path => isUNCPath
+                ? path.Substring(2).Split(Path.DirectorySeparatorChar)
+                : path.Split(Path.DirectorySeparatorChar)).ToArray();
             int minLength = splitPaths.Min(subPath => subPath.Length);
-            string commonRoot = "";
+            string commonRoot = isUNCPath ? @"\\" : "";
 
             for (int i = 0; i < minLength; i++)
             {
                 string currentComponent = splitPaths[0][i];
 
                 if (splitPaths.All(subPath => subPath[i] == currentComponent))
-                    commonRoot = Path.Combine(commonRoot, currentComponent);
+                    commonRoot = isUNCPath ? Path.Combine(commonRoot, currentComponent)
+                                           : Path.Combine(commonRoot, currentComponent).TrimStart('\\');
                 else
                     break;
             }
 
-            if (commonRoot.Length == 2)
+            if (!isUNCPath && commonRoot.Length == 2)
                 return commonRoot + "\\";
-
-            if (commonRoot.Substring(1, 1) == ":")
-            {
-                string[] parts = commonRoot.Split(':');
-                commonRoot = string.Empty;
-
-                for (int i = 0; i < parts.Length; i++)
-                {
-                    if (i == 0)
-                        commonRoot += parts[i] + ":\\";
-                    else
-                        commonRoot += parts[i];
-
-                }
-            }
 
             return commonRoot.IsFile() ? Path.GetDirectoryName(commonRoot) : commonRoot;
         }
@@ -188,7 +205,7 @@ namespace TransferEncodeDecode.Helpers
             {
                 try
                 {
-                    Directory.Delete(directory);
+                    Directory.Delete(directory, true);
                 }
                 catch { }
             }

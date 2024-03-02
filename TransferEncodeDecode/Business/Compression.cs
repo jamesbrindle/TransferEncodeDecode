@@ -36,7 +36,6 @@ namespace TransferEncodeDecode.Business
                 Arguments = $"a -t7z -m0=lzma2 -mx=9 -aoa -y -spf2 \"{destinationPath}\" {sb}",
                 WindowStyle = ProcessWindowStyle.Hidden,
                 CreateNoWindow = true,
-                WorkingDirectory = commonRoot,
                 UseShellExecute = false
             };
 
