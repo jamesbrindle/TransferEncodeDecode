@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Windows.Forms;
 using TransferEncodeDecode.Helpers;
@@ -64,7 +65,7 @@ namespace TransferEncodeDecode.Business
             }
             catch (Exception ex)
             {
-                if (ex.Message.Contains("Access to the path") || ex.Message.Contains("denied"))
+                if (ex.Message.Contains("Access to the childDiretory") || ex.Message.Contains("denied"))
                 {
                     Program.RestartTheApplicationAsAdministrator();
                     return;
@@ -115,7 +116,8 @@ namespace TransferEncodeDecode.Business
 
                 Compression.ExtractToDirectoryWith7Zip(tempArchivePath, tempDirectoryPath);
 
-                string childPath = Directory.GetDirectories(tempDirectoryPath)[0];
+                string childPath = Path.Combine(tempDirectoryPath, PathHelper.RemoveDriveLetter(GetChildDirectory(tempDirectoryPath)));
+
                 if (PathHelper.FilesExistAtDestination(childPath, directoryPath))
                 {
                     if (!ConfirmOverwrite())
@@ -133,7 +135,7 @@ namespace TransferEncodeDecode.Business
                     }
                 }
 
-                PathHelper.MoveContents(childPath, directoryPath);
+                PathHelper.MoveContents(childPath, directoryPath, tempArchivePath);
                 PathHelper.DeleteArchiveTempPaths(tempArchivePath, tempDirectoryPath);
 
                 Thread.Sleep(1000);
@@ -153,7 +155,7 @@ namespace TransferEncodeDecode.Business
             }
             catch (Exception ex)
             {
-                if (ex.Message.Contains("Access to the path") || ex.Message.Contains("denied"))
+                if (ex.Message.Contains("Access to the childDiretory") || ex.Message.Contains("denied"))
                 {
                     Program.RestartTheApplicationAsAdministrator();
                     return;
@@ -168,6 +170,24 @@ namespace TransferEncodeDecode.Business
                     Application.Exit();
                 });
             }
+        }
+
+        private string GetChildDirectory(string extractedPath)
+        {
+            string tempCommonRootFile = Directory.GetFiles(extractedPath, "*.*", SearchOption.AllDirectories)
+                                                 .Where(m => Path.GetFileName(m)
+                                                 .StartsWith("-temp-common-root"))
+                                                 .FirstOrDefault();
+
+            string childDiretory = File.ReadAllText(tempCommonRootFile);
+
+            try
+            {
+                File.Delete(tempCommonRootFile);
+            }
+            catch { }
+
+            return childDiretory;
         }
 
         private bool ConfirmOverwrite()

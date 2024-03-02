@@ -36,12 +36,19 @@ namespace TransferEncodeDecode.Helpers
             return paths;
         }
 
+        internal static string RemoveDriveLetter(string path)
+        {
+            string root = Path.GetPathRoot(path);
+            if (!string.IsNullOrEmpty(root) && path.StartsWith(root))
+                return path.Substring(root.Length);
+
+            return path;
+        }
+
         internal static string FindCommonRootDirectory(string[] paths)
         {
             if (paths == null || paths.Length == 0)
-            {
                 return string.Empty;
-            }
 
             string[][] splitPaths = paths.Select(path => path.Split(Path.DirectorySeparatorChar)).ToArray();
             int minLength = splitPaths.Min(subPath => subPath.Length);
@@ -52,13 +59,9 @@ namespace TransferEncodeDecode.Helpers
                 string currentComponent = splitPaths[0][i];
 
                 if (splitPaths.All(subPath => subPath[i] == currentComponent))
-                {
                     commonRoot = Path.Combine(commonRoot, currentComponent);
-                }
                 else
-                {
                     break;
-                }
             }
 
             if (commonRoot.Length == 2)
@@ -137,7 +140,7 @@ namespace TransferEncodeDecode.Helpers
             }
         }
 
-        internal static void MoveContents(string sourceDirPath, string destDirPath)
+        internal static void MoveContents(string sourceDirPath, string destDirPath, string excludePath)
         {
             if (!Directory.Exists(sourceDirPath))
             {
@@ -153,7 +156,9 @@ namespace TransferEncodeDecode.Helpers
             {
                 string fileName = Path.GetFileName(file);
                 string destFile = Path.Combine(destDirPath, fileName);
-                File.Move(file, destFile);
+
+                if (file != excludePath)
+                    File.Move(file, destFile);
             }
 
             string[] directories = Directory.GetDirectories(sourceDirPath);
@@ -163,7 +168,7 @@ namespace TransferEncodeDecode.Helpers
                 string destDir = Path.Combine(destDirPath, dirName);
 
                 Directory.CreateDirectory(destDir);
-                MoveContents(directory, destDir);
+                MoveContents(directory, destDir, excludePath);
                 Directory.Delete(directory, true);
             }
         }
@@ -179,11 +184,11 @@ namespace TransferEncodeDecode.Helpers
                 catch { }
             }
 
-            foreach (var file in Directory.GetDirectories(Program.TempPath, "*.*", SearchOption.AllDirectories))
+            foreach (var directory in Directory.GetDirectories(Program.TempPath, "*.*", SearchOption.AllDirectories))
             {
                 try
                 {
-                    Directory.Delete(file);
+                    Directory.Delete(directory);
                 }
                 catch { }
             }

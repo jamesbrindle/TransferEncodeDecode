@@ -10,7 +10,10 @@ namespace TransferEncodeDecode.Business
     {
         public static void CompressFilesAndFoldersWith7Zip(List<string> sourcePaths, string destinationPath)
         {
-            string workingDirectory = PathHelper.FindCommonRootDirectory(sourcePaths.ToArray());
+            string commonRoot = PathHelper.FindCommonRootDirectory(sourcePaths.ToArray());
+            string commonRootFile = Path.Combine(Program.TempPath, $"-temp-common-root-{Extensions.GenerateShortGuid(8)}");
+
+            File.WriteAllText(commonRootFile, commonRoot);
 
             StringBuilder sb = new StringBuilder();
             foreach (string path in sourcePaths)
@@ -23,6 +26,8 @@ namespace TransferEncodeDecode.Business
                     foreach (var file in files)
                         sb.Append($"\"{file}\" ");
                 }
+
+                sb.Append($"\"{commonRootFile}\" ");
             }
 
             ProcessStartInfo processStartInfo = new ProcessStartInfo
@@ -31,7 +36,7 @@ namespace TransferEncodeDecode.Business
                 Arguments = $"a -t7z -m0=lzma2 -mx=9 -aoa -y -spf2 \"{destinationPath}\" {sb}",
                 WindowStyle = ProcessWindowStyle.Hidden,
                 CreateNoWindow = true,
-                WorkingDirectory = workingDirectory,
+                WorkingDirectory = commonRoot,
                 UseShellExecute = false
             };
 
