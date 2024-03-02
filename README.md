@@ -6,7 +6,7 @@ Often in business, IT admin will restrict an RDP session for copying files from 
 
 Therefore, I've created this handy little tool as a workaround (and yes, this is mischievous).
 
-All it does, is encode the file to base64, compress it and copy the base64 to the clipboard. On the other end, you run the utility to read from the clipboard, convert the base64 back to bytes (and decompress) and write the bytes to the disk.
+All it does, is encode the file to Ascii85 (base85), compress it and copy the Ascii85 to the clipboard. On the other end, you run the utility to read from the clipboard, convert the Ascii85 back to bytes (and decompress) and write the bytes to the disk.
 
 It's similar to running this in a command window on your machine:
 
