@@ -46,7 +46,11 @@ namespace TransferEncodeDecode.Business
                 process.WaitForExit();
             }
 
-            File.Delete(commonRootFile);
+            try
+            {
+                File.Delete(commonRootFile);
+            }
+            catch { }
         }
 
         public static void ExtractToDirectoryWith7Zip(string archivePath, string outputDirectory)

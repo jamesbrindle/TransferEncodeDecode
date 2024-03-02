@@ -24,6 +24,7 @@ namespace TransferEncodeDecode.Business
                 tempArchivePath = Path.Combine(Program.TempPath, $"{Guid.NewGuid()}.7z");
 
                 Compression.CompressFilesAndFoldersWith7Zip(Program.InputFiles, tempArchivePath);
+                Thread.Sleep(100);
 
                 const int bufferSize = 8192;
                 var buffer = new byte[bufferSize];
@@ -117,7 +118,9 @@ namespace TransferEncodeDecode.Business
                     inputMemoryStream.CopyTo(fileStream);
                 }
 
+                Thread.Sleep(150);
                 Compression.ExtractToDirectoryWith7Zip(tempArchivePath, tempDirectoryPath);
+                Thread.Sleep(150);
 
                 string childPath = Path.Combine(tempDirectoryPath, PathHelper.RemoveHostOrDriveLetter(PathHelper.GetChildDirectory(tempDirectoryPath)));
 
@@ -138,7 +141,9 @@ namespace TransferEncodeDecode.Business
                     }
                 }
 
+                Thread.Sleep(150);
                 PathHelper.MoveContents(childPath, directoryPath, tempArchivePath);
+                Thread.Sleep(150);
                 PathHelper.DeleteArchiveTempPaths(tempArchivePath, tempDirectoryPath);
 
                 Thread.Sleep(1000);
