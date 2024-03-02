@@ -2,6 +2,7 @@
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Security.Cryptography;
 
 namespace TransferEncodeDecode.Helpers
 {
@@ -97,7 +98,9 @@ namespace TransferEncodeDecode.Helpers
             }
 
             if (!isUNCPath && commonRoot.Length == 2)
-                return commonRoot + "\\";
+                commonRoot += "\\";
+            else if (!isUNCPath)
+                commonRoot = commonRoot[0] + ":\\" + commonRoot.Substring(2);
 
             return commonRoot.IsFile() ? Path.GetDirectoryName(commonRoot) : commonRoot;
         }
