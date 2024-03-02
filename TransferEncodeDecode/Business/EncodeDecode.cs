@@ -56,6 +56,8 @@ namespace TransferEncodeDecode.Business
                 {
                     MainForm.SetLabelText("File too big");
                     PathHelper.DeleteArchiveTempPaths(tempArchivePath);
+                    PathHelper.CleanTempArgs();
+                    PathHelper.CleanTempCommonRootFile();
 
                     Thread.Sleep(1500);
                     Application.Exit();
@@ -75,6 +77,8 @@ namespace TransferEncodeDecode.Business
                 {
                     MainForm.SetLabelText(ex.Message);
                     PathHelper.DeleteArchiveTempPaths(tempArchivePath);
+                    PathHelper.CleanTempArgs();
+                    PathHelper.CleanTempCommonRootFile();
 
                     Thread.Sleep(1500);
                     Application.Exit();
@@ -146,6 +150,8 @@ namespace TransferEncodeDecode.Business
                 {
                     MainForm.SetLabelText("File too big");
                     PathHelper.DeleteArchiveTempPaths(tempArchivePath, tempDirectoryPath);
+                    PathHelper.CleanTempArgs();
+                    PathHelper.CleanTempCommonRootFile();
 
                     Thread.Sleep(1500);
                     Application.Exit();
@@ -164,6 +170,8 @@ namespace TransferEncodeDecode.Business
                 {
                     MainForm.SetLabelText(ex.Message);
                     PathHelper.DeleteArchiveTempPaths(tempArchivePath, tempDirectoryPath);
+                    PathHelper.CleanTempArgs();
+                    PathHelper.CleanTempCommonRootFile();
 
                     Thread.Sleep(1500);
                     Application.Exit();

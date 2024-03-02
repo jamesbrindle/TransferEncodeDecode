@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using TransferEncodeDecode.Business;
+using TransferEncodeDecode.Helpers;
 
 namespace TransferEncodeDecode
 {
@@ -110,6 +111,7 @@ namespace TransferEncodeDecode
                 while (!Program.StartProcess)
                     Thread.Sleep(50);
 
+                PathHelper.CleanTempArgs();
             }).Start();
         }
 

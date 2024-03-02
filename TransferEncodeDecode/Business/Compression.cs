@@ -26,9 +26,9 @@ namespace TransferEncodeDecode.Business
                     foreach (var file in files)
                         sb.Append($"\"{file}\" ");
                 }
-
-                sb.Append($"\"{commonRootFile}\" ");
             }
+
+            sb.Append($"\"{commonRootFile}\" ");
 
             ProcessStartInfo processStartInfo = new ProcessStartInfo
             {
@@ -45,6 +45,8 @@ namespace TransferEncodeDecode.Business
                 process.Start();
                 process.WaitForExit();
             }
+
+            File.Delete(commonRootFile);
         }
 
         public static void ExtractToDirectoryWith7Zip(string archivePath, string outputDirectory)

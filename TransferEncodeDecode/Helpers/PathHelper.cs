@@ -2,7 +2,7 @@
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Security.Cryptography;
+using System.Threading;
 
 namespace TransferEncodeDecode.Helpers
 {
@@ -76,6 +76,9 @@ namespace TransferEncodeDecode.Helpers
         {
             if (paths == null || paths.Length == 0)
                 return string.Empty;
+
+            if (paths.Length == 1 && paths[0].IsDirectory())
+                return Path.GetDirectoryName(paths[0]);
 
             // Check for UNC path
             bool isUNCPath = paths.All(path => path.StartsWith(@"\\"));
@@ -209,6 +212,34 @@ namespace TransferEncodeDecode.Helpers
                 try
                 {
                     Directory.Delete(directory, true);
+                }
+                catch { }
+            }
+        }
+
+        internal static void CleanTempCommonRootFile()
+        {
+            Thread.Sleep(100);
+            foreach (var file in Directory.GetFiles(Program.TempPath, "*.*", SearchOption.AllDirectories)
+                                          .Where(m => Path.GetFileName(m).StartsWith("-temp-common")))
+            {
+                try
+                {
+                    File.Delete(file);
+                }
+                catch { }
+            }
+        }
+
+        internal static void CleanTempArgs()
+        {
+            Thread.Sleep(100);
+            foreach (var file in Directory.GetFiles(Program.TempPath, "*.*", SearchOption.AllDirectories)
+                                          .Where(m => Path.GetFileName(m).StartsWith("-temp-args")))
+            {
+                try
+                {
+                    File.Delete(file);
                 }
                 catch { }
             }
