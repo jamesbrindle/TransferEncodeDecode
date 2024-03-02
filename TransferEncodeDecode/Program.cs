@@ -72,7 +72,7 @@ namespace TransferEncodeDecode
 
                         string path = null;
 
-                        args = PathHelper.CleanArgsForDriveSelection(args);
+                        args = PathHelper.CleanPathsForDriveSelection(args);
                         foreach (string arg in args)
                         {
                             if (arg.Trim().ToLower() == "-d")

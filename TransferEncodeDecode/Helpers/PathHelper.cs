@@ -7,33 +7,33 @@ namespace TransferEncodeDecode.Helpers
 {
     internal class PathHelper
     {
-        internal static string[] CleanArgsForDriveSelection(string[] args)
+        internal static string[] CleanPathsForDriveSelection(string[] paths)
         {
             try
             {
-                if (args != null && args.Length > 0)
+                if (paths != null && paths.Length > 0)
                 {
-                    if (args[0].ToLower().Contains(":\" "))
+                    if (paths[0].ToLower().Contains(":\" "))
                     {
-                        args[0] = args[0].Replace("\"", "");
-                        args = args[0].Split(' ');
+                        paths[0] = paths[0].Replace("\"", "");
+                        paths = paths[0].Split(' ');
                     }
-                    else if (args[0].ToLower().Contains(": "))
-                        args = args[0].Split(' ');
+                    else if (paths[0].ToLower().Contains(": "))
+                        paths = paths[0].Split(' ');
 
-                    if (args[1].ToLower().Contains(":\" "))
-                        args[1] = args[1].Replace("\"", "");
+                    if (paths[1].ToLower().Contains(":\" "))
+                        paths[1] = paths[1].Replace("\"", "");
 
-                    if (args[1].ToLower().Contains(":\""))
-                        args[1] = args[1].Replace("\"", "");
+                    if (paths[1].ToLower().Contains(":\""))
+                        paths[1] = paths[1].Replace("\"", "");
 
-                    if (args[1].ToLower().Contains(": "))
-                        args[1] = args[1].Replace(" ", "");
+                    if (paths[1].ToLower().Contains(": "))
+                        paths[1] = paths[1].Replace(" ", "");
                 }
             }
             catch { }
 
-            return args;
+            return paths;
         }
 
         internal static string FindCommonRootDirectory(string[] paths)
