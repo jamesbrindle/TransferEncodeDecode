@@ -4,6 +4,9 @@ using System.Text;
 
 namespace TransferEncodeDecode.Helpers
 {
+    /// <summary>
+    /// Encode / Decode to Base85
+    /// </summary>
     internal class Ascii85Encoder
     {
         // the first and last characters used in the Ascii85 encoding character set
